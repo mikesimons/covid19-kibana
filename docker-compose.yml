@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+  nginx:
+    image: nshou/elasticsearch-kibana
+    ports:
+      - 9200:9200
+      - 5601:5601
+    volumes:
+      - es-data:/home/elasticsearch/elasticsearch/data
+
+volumes:
+  es-data:
