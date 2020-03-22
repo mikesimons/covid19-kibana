@@ -22,3 +22,15 @@ This will download the latest data from [covid19api](https://covid19api.com/), p
 
 Finally, navigate to http://localhost:5601/app/kibana#/management/kibana/objects and import the "export.ndjson" file.
 This will configure the index patterns and a few basic visualizations w/ dashboard.
+
+## Visualizations
+Visualizations are all based on cases by day since the first day 10 cases is exceeded.
+
+- Active (confirmed - recovered - death)
+- Confirmed
+- Recovered
+- Deaths
+
+Here is a sample of what they look like filtered for some countries:
+
+![Example dashboard](dashboard.png)
