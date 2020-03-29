@@ -18,6 +18,7 @@ type Record struct {
 	Date time.Time
 	Country string
 	Region string
+	Admin2 string
 	Confirmed int
 	Deaths int
 	Recovered int
@@ -70,6 +71,14 @@ func main() {
 			// Map row to record, augmenting with date
 			record := mapper(row)
 			record.Date = d
+
+			// Data on the 23rd March for France is corrupted
+			// Data belonging to all france is associated with French Polynesia on this day
+			// But then changed on the next day. This screws up the delta calculations
+			if record.Country == "France" && record.Region == "French Polynesia" && record.Date.Format("2006-01-02") == "2020-03-23" {
+				record.Region = ""
+			}
+
 			aggregate(&record)
 
 			records = append(records, record)
@@ -149,11 +158,11 @@ func rowMapper(headerRow string) (func(string) Record, error) {
 			fieldMap["recovered"] = index
 			continue
 		}
-	}
 
-	// Make sure we've got all of the fields
-	if len(fieldMap) != 5 {
-		return nil, fmt.Errorf("missing field mappings: %#v", fieldMap)
+		if regexp.MustCompile(".*admin.*").MatchString(header) {
+			fieldMap["admin2"] = index
+			continue
+		}
 	}
 
 	return func(row string) Record {
@@ -173,6 +182,7 @@ func rowMapper(headerRow string) (func(string) Record, error) {
 		return Record {
 			Country: country,
 			Region: fields[fieldMap["region"]],
+			Admin2: fields[fieldMap["admin2"]],
 			Confirmed: confirmed,
 			Deaths: deaths,
 			Recovered: recovered,
@@ -191,7 +201,7 @@ func aggregate(r *Record) {
 		counters = make(map[string]int)
 	}
 
-	key := r.Country + r.Region + r.Date.Format("2006-02-01")
+	key := r.Country + r.Region + r.Admin2 + r.Date.Format("2006-02-01")
 
 	counters[key + "confirmed"] += r.Confirmed
 	counters[key + "deaths"] += r.Deaths
@@ -227,8 +237,8 @@ func applyAggregates(r *Record) {
 
 	deltas := func(t string, name string) {
 		yesterday := r.Date.AddDate(0, 0, -1)
-		key := r.Country + r.Region + r.Date.Format("2006-02-01") + t
-		prevKey := r.Country + r.Region + yesterday.Format("2006-02-01") + t
+		key := r.Country + r.Region + r.Admin2 + r.Date.Format("2006-02-01") + t
+		prevKey := r.Country + r.Region + r.Admin2 + yesterday.Format("2006-02-01") + t
 
 		if _, ok := counters[prevKey]; !ok {
 			r.Calculated[name] = 0
